@@ -62,9 +62,11 @@ app.get('/key', (req, res) => {
 
 app.post("/hola", (req, res) => {
 
-  mensajeRecibido = bigconv.bigintToText(rsa.decrypt(bigconv.hexToBigint(req.body.mensaje.c), prKey.d, puKey.n));
+  clientePublicKey = new rsa.PublicKey(bigconv.hexToBigint(req.body.mensaje.e),bigconv.hexToBigint(req.body.mensaje.n));
+
+  mensajeRecibido = bigconv.bigintToText(prKey.decrypt(bigconv.hexToBigint(req.body.mensaje.c)));
   respuesta = "Hola, gracias por tu mensaje. Te confirmo que he recibido el siguiente texto --> " + mensajeRecibido
-  respuestaEncriptada = bigconv.bigintToHex(rsa.encrypt(bigconv.textToBigint(respuesta), bigconv.hexToBigint(req.body.mensaje.e), bigconv.hexToBigint(req.body.mensaje.n)));
+  respuestaEncriptada = bigconv.bigintToHex(clientePublicKey.encrypt(bigconv.textToBigint(respuesta)));
 
   const cosas = {
     respuestaServidor: respuestaEncriptada
