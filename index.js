@@ -74,6 +74,19 @@ app.post("/hola", (req, res) => {
   res.status(200).send(cosas);
 });
 
+app.post("/blindSign", (req, res) => {
+
+  clientePublicKey = new rsa.PublicKey(bigconv.hexToBigint(req.body.mensaje.e),bigconv.hexToBigint(req.body.mensaje.n));
+
+  mensajeRecibido = bigconv.bigintToText(prKey.decrypt(bigconv.hexToBigint(req.body.mensaje.c)));
+  console.log(mensajeRecibido)
+  respuestaFirmada = bigconv.bigintToHex(prKey.sign(bigconv.hexToBigint(req.body.mensaje.c)));
+
+  const cosas = {
+    respuestaServidor: respuestaFirmada
+  }
+  res.status(200).send(cosas);
+});
 
 
 
