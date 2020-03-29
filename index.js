@@ -6,11 +6,14 @@ const path = require('path');
 const rsa = require('rsa');
 const bigconv = require('bigint-conversion');
 const sha = require('object-sha');
+const request = require('request');
 
 const ___dirname = path.resolve();
 
 global.puKey;
 global.prKey;
+global.TTPPuKey;
+global.SKey;
 
 async function claves() {
   const { publicKey, privateKey } = await rsa.generateRandomKeys(3072);
@@ -19,6 +22,46 @@ async function claves() {
   prKey = privateKey;
 
 };
+
+async function getSKey(){
+  await request('http://localhost:8500/SKeyType4',{json: true},(err,res,body) => {
+    if(err){
+      return console.log(err);
+    }
+    console.log(body.body)
+    SKey = body.body;
+  });
+}
+
+
+
+async function decryptSKey(key, mensaje) {
+  var iv = SubtleCrypto.getRandomValues(new Uint8Array(16));
+
+
+  var methodKey = {
+    name: 'AES-CBC',
+    length: 128
+  };
+
+  var keyUsages = [
+    'encrypt',
+    'decrypt'
+  ];
+
+  var algoEncrypt = {
+    name: 'AES-CBC',
+    iv: iv,
+    tagLength: 128
+  };
+
+  console.log(key);
+  
+
+  const importedKey = await SubtleCrypto.subtle.importKey("jwk", key, methodKey, false, keyUsages);
+  return await SubtleCrypto.subtle.decrypt(algoEncrypt, importedKey, mensaje);
+
+}
 
 
 // settings
@@ -60,6 +103,15 @@ app.get('/key', (req, res) => {
   res.status(200).send(publicKey);
 
 });
+
+function getTTPPublicKey() {
+  request('http://localhost:8500/key',{json: true},(err,res,body) => {
+    if(err){
+      return console.log(err);
+    }
+    TTPPuKey = new rsa.PublicKey(bigconv.hexToBigint(body.e), bigconv.hexToBigint(body.n))
+  });
+}
 
 app.post("/hola", (req, res) => {
 
@@ -109,6 +161,15 @@ app.post("/mensaje1NoRepudio", async (req, res) => {
     res.status(200).send({
       body, pr
     });
+
+    getTTPPublicKey();
+    getSKey();
+
+
+    // var message = await decryptSKey(SKey,bigconv.hexToBuf(req.body.mensaje.body.msg))
+    // console.log(bigconv.bufToText(message));
+
+
 
   } else {
     res.status(400).send("No se ha podido verificar al cliente A");

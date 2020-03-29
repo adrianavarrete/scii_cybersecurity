@@ -14,9 +14,13 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "morgan": "^1.9.1",
+    "native-crypto": "^1.8.1",
     "nodemon": "^2.0.2",
     "object-sha": "^1.0.3",
     "path": "^0.12.7",
-    "rsa": "file:../rsa-cybersecurity"
+    "request": "^2.88.2",
+    "rsa": "file:../rsa-cybersecurity",
+    "subtle-crypto": "0.0.0",
+    "webcrypto": "^0.1.1"
   }
 }
