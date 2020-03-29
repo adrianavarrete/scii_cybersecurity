@@ -5,6 +5,7 @@ const cors = require('cors');
 const path = require('path');
 const rsa = require('rsa');
 const bigconv = require('bigint-conversion');
+const sha = require('object-sha');
 
 const ___dirname = path.resolve();
 
@@ -62,7 +63,7 @@ app.get('/key', (req, res) => {
 
 app.post("/hola", (req, res) => {
 
-  clientePublicKey = new rsa.PublicKey(bigconv.hexToBigint(req.body.mensaje.e),bigconv.hexToBigint(req.body.mensaje.n));
+  clientePublicKey = new rsa.PublicKey(bigconv.hexToBigint(req.body.mensaje.e), bigconv.hexToBigint(req.body.mensaje.n));
 
   mensajeRecibido = bigconv.bigintToText(prKey.decrypt(bigconv.hexToBigint(req.body.mensaje.c)));
   respuesta = "Hola, gracias por tu mensaje. Te confirmo que he recibido el siguiente texto --> " + mensajeRecibido
@@ -76,7 +77,7 @@ app.post("/hola", (req, res) => {
 
 app.post("/blindSign", (req, res) => {
 
-  clientePublicKey = new rsa.PublicKey(bigconv.hexToBigint(req.body.mensaje.e),bigconv.hexToBigint(req.body.mensaje.n));
+  clientePublicKey = new rsa.PublicKey(bigconv.hexToBigint(req.body.mensaje.e), bigconv.hexToBigint(req.body.mensaje.n));
 
   mensajeRecibido = bigconv.bigintToText(prKey.decrypt(bigconv.hexToBigint(req.body.mensaje.c)));
   console.log(mensajeRecibido)
@@ -86,6 +87,58 @@ app.post("/blindSign", (req, res) => {
     respuestaServidor: respuestaFirmada
   }
   res.status(200).send(cosas);
+});
+
+app.post("/mensaje1NoRepudio", async (req, res) => {
+
+  clientePublicKey = new rsa.PublicKey(bigconv.hexToBigint(req.body.mensaje.e), bigconv.hexToBigint(req.body.mensaje.n));
+  console.log(clientePublicKey);
+  if ( await verifyHash(clientePublicKey) == true) {
+
+    const body = {
+      type: '2',
+      src: 'B',
+      dst: 'A',
+      msg: req.body.mensaje.body.msg,
+    }
+
+    const digest = await digestHash(body);
+
+    const pr = bigconv.bigintToHex(prKey.sign(bigconv.textToBigint(digest)));
+
+    res.status(200).send({
+      body, pr
+    });
+
+  } else {
+    res.status(400).send("No se ha podido verificar al cliente A");
+  }
+
+  async function digestHash(body){
+    const d = await sha.digest(body, 'SHA-256');
+    return d;
+  }
+
+  async function verifyHash(clientePublicKey) {
+    const hashBody = await sha.digest(req.body.mensaje.body, 'SHA-256')
+
+    console.log(hashBody);
+    console.log(bigconv.bigintToText(clientePublicKey.verify(bigconv.hexToBigint(req.body.mensaje.po))))
+    var verify = false;
+
+    if (hashBody == bigconv.bigintToText(clientePublicKey.verify(bigconv.hexToBigint(req.body.mensaje.po)))) {
+      verify = true
+    }
+    console.log(verify);
+
+    return verify
+  }
+
+
+
+
+
+
 });
 
 
