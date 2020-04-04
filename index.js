@@ -147,18 +147,11 @@ app.post("/mensaje1NoRepudio", async (req, res) => {
       SKey = await getSKey();
     }
 
-    // var message = decryptSKey(SKey.msg.k,c)
+    console.log(bigconv.hexToBuf(SKey.msg), SKey.iv)
 
-    console.log(SKey.msg.k, SKey.iv)
-
-    console.log(bigconv.hexToBuf(SKey.iv))
-    console.log(c)
-    console.log(bigconv.hexToBuf(c))
-    console.log(bigconv.hexToBuf(SKey.msg.k))
-
-
-    message = decrypt(bigconv.hexToBuf(c), bigconv.hexToBuf(SKey.msg.k), bigconv.hexToBuf(SKey.iv))
-    console.log(message);
+  
+    message = decrypt(bigconv.hexToBuf(c), bigconv.hexToBuf(SKey.msg), bigconv.hexToBuf(SKey.iv))
+    console.log("La clave ha sido descargada de la TTP y he desencriptado el mensaje --> "+ message);
 
 
   } else {
@@ -171,10 +164,10 @@ app.post("/mensaje1NoRepudio", async (req, res) => {
   }
 
   function decrypt(c, key, iv) {
-    var decipher = crypto.createDecipher('aes-128-cbc', key, iv)
+    var decipher = crypto.createDecipheriv('aes-128-cbc', key, iv)
     var decrypted = decipher.update(c)
-    decrypted = Buffer.concat([decrypted, decipher.final()])
-    return decrypted.toString();
+    return decrypted += decipher.final('utf8');
+    
   }
 
   function getSKey() {
@@ -202,6 +195,16 @@ app.post("/mensaje1NoRepudio", async (req, res) => {
     console.log(verify);
 
     return verify
+  }
+
+  function base64ToHex(str) {
+    const raw = atob(str);
+    let result = '';
+    for (let i = 0; i < raw.length; i++) {
+      const hex = raw.charCodeAt(i).toString(16);
+      result += (hex.length === 2 ? hex : '0' + hex);
+    }
+    return result.toUpperCase();
   }
 
 
