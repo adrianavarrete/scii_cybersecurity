@@ -143,62 +143,56 @@ app.post("/mensaje1NoRepudio", async (req, res) => {
 
     SKey = await getSKey();
 
-    while (SKey.msg == null) {
+    while (SKey.body.msg == null) {
       SKey = await getSKey();
     }
 
-    console.log(bigconv.hexToBuf(SKey.msg), SKey.iv)
+    if (await verifyHash(TTPPuKey, SKey.body, SKey.pkp) == true) {
+      message = decrypt(bigconv.hexToBuf(c), bigconv.hexToBuf(SKey.body.msg), bigconv.hexToBuf(SKey.body.iv))
+      console.log("La clave ha sido descargada de la TTP y he desencriptado el mensaje --> " + message);
 
 
-    message = decrypt(bigconv.hexToBuf(c), bigconv.hexToBuf(SKey.msg), bigconv.hexToBuf(SKey.iv))
-    console.log("La clave ha sido descargada de la TTP y he desencriptado el mensaje --> " + message);
-
+    } else {
+      console.log("No se ha podido verificar la TTP");
+    }
 
   } else {
     res.status(400).send("No se ha podido verificar al cliente A");
   }
-
-  async function digestHash(body) {
-    const d = await sha.digest(body, 'SHA-256');
-    return d;
-  }
-
-  function decrypt(c, key, iv) {
-    var decipher = crypto.createDecipheriv('aes-128-cbc', key, iv)
-    var decrypted = decipher.update(c)
-    return decrypted += decipher.final('utf8');
-
-  }
-
-  async function getSKey() {
-    return new Promise((resolve, reject) => {
-      request.get('http://localhost:8500/SKeyType4', { json: true }, (err, res, body) => {
-        if (err) reject(err)
-        else {
-          console.log(res.body.body);
-          resolve(res.body.body);
-        }
-      })
-    });
-  }
-
-  async function verifyHash(PublicKey, body, signature) {
-    const hashBody = await sha.digest(body, 'SHA-256')
-
-    console.log(hashBody);
-    console.log(bigconv.bigintToText(PublicKey.verify(bigconv.hexToBigint(signature))))
-    var verify = false;
-
-    if (hashBody == bigconv.bigintToText(PublicKey.verify(bigconv.hexToBigint(signature)))) {
-      verify = true
-    }
-    console.log(verify);
-
-    return verify
-  }
-
-
 });
+
+async function digestHash(body) {
+  const d = await sha.digest(body, 'SHA-256');
+  return d;
+}
+
+function decrypt(c, key, iv) {
+  var decipher = crypto.createDecipheriv('aes-128-cbc', key, iv)
+  var decrypted = decipher.update(c)
+  return decrypted += decipher.final('utf8');
+
+}
+
+async function getSKey() {
+  return new Promise((resolve, reject) => {
+    request.get('http://localhost:8500/SKeyType4', { json: true }, (err, res, body) => {
+      if (err) reject(err)
+      else {
+        resolve(res.body);
+      }
+    })
+  });
+}
+
+async function verifyHash(PublicKey, body, signature) {
+  const hashBody = await sha.digest(body, 'SHA-256')
+  var verify = false;
+
+  if (hashBody == bigconv.bigintToText(PublicKey.verify(bigconv.hexToBigint(signature)))) {
+    verify = true
+  }
+  return verify
+}
 
 
 
