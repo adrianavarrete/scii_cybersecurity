@@ -23,7 +23,7 @@ global.c;
 async function claves() {
   const { publicKey, privateKey } = await rsa.generateRandomKeys(3072);
   //const { paillierPublicKey, paillierPrivateKey } = await paillierBigint.generateRandomKeys(3072);
-  const paillierKeyPair = await paillierBigint.generateRandomKeys(3072);
+  const paillierKeyPair = await paillierBigint.generateRandomKeysSync(3072);
 
   puKey = publicKey;
   prKey = privateKey;
@@ -122,6 +122,17 @@ app.post("/hola", (req, res) => {
 
   const cosas = {
     respuestaServidor: respuestaEncriptada
+  }
+  res.status(200).send(cosas);
+});
+
+app.post("/suma", (req, res) => {
+
+  console.log(bigconv.bigintToHex(paillierPrKey.decrypt(paillierPuKey.multiply(bigconv.hexToBigint(req.body.c1),bigconv.hexToBigint(req.body.c2)))))
+  sumaCifrada = bigconv.bigintToHex(paillierPrKey.decrypt(paillierPuKey.addition(bigconv.hexToBigint(req.body.c1),bigconv.hexToBigint(req.body.c2))));
+
+  const cosas = {
+    suma: sumaCifrada
   }
   res.status(200).send(cosas);
 });
