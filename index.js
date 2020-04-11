@@ -8,20 +8,28 @@ const bigconv = require('bigint-conversion');
 const sha = require('object-sha');
 const request = require('request');
 const crypto = require('crypto');
+const paillierBigint = require('paillier-bigint');
 
 const ___dirname = path.resolve();
 
 global.puKey;
 global.prKey;
+global.paillierPuKey;
+global.paillierPrKey;
 global.TTPPuKey;
 global.SKey = null;
 global.c;
 
 async function claves() {
   const { publicKey, privateKey } = await rsa.generateRandomKeys(3072);
+  //const { paillierPublicKey, paillierPrivateKey } = await paillierBigint.generateRandomKeys(3072);
+  const paillierKeyPair = await paillierBigint.generateRandomKeys(3072);
 
   puKey = publicKey;
   prKey = privateKey;
+  paillierPuKey = paillierKeyPair.publicKey;
+  paillierPrKey = paillierKeyPair.privateKey;
+  console.log(paillierPuKey)
 
 };
 
@@ -71,6 +79,24 @@ app.get('/key', (req, res) => {
   publicKey = new PublicKey(
     puKey.e,
     puKey.n
+  )
+
+  res.status(200).send(publicKey);
+
+});
+
+app.get('/paillierKey', (req, res) => {
+
+  class PublicKey {
+    constructor(n, g) {
+      this.n = bigconv.bigintToHex(n);
+      this.g = bigconv.bigintToHex(g);
+    }
+  }
+
+  publicKey = new PublicKey(
+    paillierPuKey.n,
+    paillierPuKey.g
   )
 
   res.status(200).send(publicKey);

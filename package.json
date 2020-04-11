@@ -17,6 +17,7 @@
     "native-crypto": "^1.8.1",
     "nodemon": "^2.0.2",
     "object-sha": "^1.0.3",
+    "paillier-bigint": "^3.0.4",
     "path": "^0.12.7",
     "request": "^2.88.2",
     "rsa": "file:../rsa-cybersecurity",
