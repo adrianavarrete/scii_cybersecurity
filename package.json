@@ -21,6 +21,7 @@
     "path": "^0.12.7",
     "request": "^2.88.2",
     "rsa": "file:../rsa-cybersecurity",
+    "shamirs-secret-sharing": "^1.0.1",
     "subtle-crypto": "0.0.0",
     "webcrypto": "^0.1.1"
   }
