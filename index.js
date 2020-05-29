@@ -9,6 +9,7 @@ const sha = require('object-sha');
 const request = require('request');
 const crypto = require('crypto');
 const paillierBigint = require('paillier-bigint');
+const sss = require('shamirs-secret-sharing')
 
 const ___dirname = path.resolve();
 
@@ -19,6 +20,7 @@ global.paillierPrKey;
 global.TTPPuKey;
 global.SKey = null;
 global.c;
+global.sharesServer;
 
 async function claves() {
   const { publicKey, privateKey } = await rsa.generateRandomKeys(3072);
@@ -128,8 +130,8 @@ app.post("/hola", (req, res) => {
 
 app.post("/suma", (req, res) => {
 
-  console.log(bigconv.bigintToHex(paillierPrKey.decrypt(paillierPuKey.multiply(bigconv.hexToBigint(req.body.c1),bigconv.hexToBigint(req.body.c2)))))
-  sumaCifrada = bigconv.bigintToHex(paillierPrKey.decrypt(paillierPuKey.addition(bigconv.hexToBigint(req.body.c1),bigconv.hexToBigint(req.body.c2))));
+  console.log(bigconv.bigintToHex(paillierPrKey.decrypt(paillierPuKey.multiply(bigconv.hexToBigint(req.body.c1), bigconv.hexToBigint(req.body.c2)))))
+  sumaCifrada = bigconv.bigintToHex(paillierPrKey.decrypt(paillierPuKey.addition(bigconv.hexToBigint(req.body.c1), bigconv.hexToBigint(req.body.c2))));
 
   const cosas = {
     suma: sumaCifrada
@@ -149,6 +151,50 @@ app.post("/blindSign", (req, res) => {
     respuestaServidor: respuestaFirmada
   }
   res.status(200).send(cosas);
+});
+
+app.get("/shamir", (req, res) => {
+
+  const secret = Buffer.from('La vacuna para el COVID-19 es simplemente azucar')
+  const shares = sss.split(secret, { shares: 3, threshold: 2 })
+  sharesServer = shares;
+  console.log(sharesServer)
+  const cosas = {
+    respuestaServidor: shares
+  }
+  res.status(200).send(cosas);
+});
+
+app.post("/getShamirKey", (req, res) => {
+  console.log(req.body[0])
+  if (req.body.length == 1) {
+    const secret = sss.combine([sharesServer[Number(req.body[0])]]);
+
+    const cosas = {
+      respuestaServidor: secret
+    }
+    res.status(200).send(cosas);
+
+  } else if (req.body.length == 2) {
+    const secret = sss.combine([sharesServer[Number(req.body[0])], sharesServer[Number(req.body[1])]]);
+
+    const cosas = {
+      respuestaServidor: secret
+    }
+    res.status(200).send(cosas);
+
+  } else if (req.body.length == 3) {
+    const secret = sss.combine([sharesServer[Number(req.body[0])], sharesServer[Number(req.body[1])], sharesServer[Number(req.body[2])]]);
+
+    const cosas = {
+      respuestaServidor: secret
+    }
+    res.status(200).send(cosas);
+
+  } else {
+    res.status(400).send("ERRROR");
+  }
+
 });
 
 app.post("/mensaje1NoRepudio", async (req, res) => {
