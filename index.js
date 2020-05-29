@@ -8,20 +8,28 @@ const bigconv = require('bigint-conversion');
 const sha = require('object-sha');
 const request = require('request');
 const crypto = require('crypto');
+const paillierBigint = require('paillier-bigint');
 
 const ___dirname = path.resolve();
 
 global.puKey;
 global.prKey;
+global.paillierPuKey;
+global.paillierPrKey;
 global.TTPPuKey;
 global.SKey = null;
 global.c;
 
 async function claves() {
   const { publicKey, privateKey } = await rsa.generateRandomKeys(3072);
+  //const { paillierPublicKey, paillierPrivateKey } = await paillierBigint.generateRandomKeys(3072);
+  const paillierKeyPair = await paillierBigint.generateRandomKeysSync(3072);
 
   puKey = publicKey;
   prKey = privateKey;
+  paillierPuKey = paillierKeyPair.publicKey;
+  paillierPrKey = paillierKeyPair.privateKey;
+  console.log(paillierPuKey)
 
 };
 
@@ -77,6 +85,24 @@ app.get('/key', (req, res) => {
 
 });
 
+app.get('/paillierKey', (req, res) => {
+
+  class PublicKey {
+    constructor(n, g) {
+      this.n = bigconv.bigintToHex(n);
+      this.g = bigconv.bigintToHex(g);
+    }
+  }
+
+  publicKey = new PublicKey(
+    paillierPuKey.n,
+    paillierPuKey.g
+  )
+
+  res.status(200).send(publicKey);
+
+});
+
 function getTTPPublicKey() {
   request('http://localhost:8500/key', { json: true }, (err, res, body) => {
     if (err) {
@@ -96,6 +122,17 @@ app.post("/hola", (req, res) => {
 
   const cosas = {
     respuestaServidor: respuestaEncriptada
+  }
+  res.status(200).send(cosas);
+});
+
+app.post("/suma", (req, res) => {
+
+  console.log(bigconv.bigintToHex(paillierPrKey.decrypt(paillierPuKey.multiply(bigconv.hexToBigint(req.body.c1),bigconv.hexToBigint(req.body.c2)))))
+  sumaCifrada = bigconv.bigintToHex(paillierPrKey.decrypt(paillierPuKey.addition(bigconv.hexToBigint(req.body.c1),bigconv.hexToBigint(req.body.c2))));
+
+  const cosas = {
+    suma: sumaCifrada
   }
   res.status(200).send(cosas);
 });
